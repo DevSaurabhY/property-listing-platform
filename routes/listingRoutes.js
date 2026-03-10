@@ -2,110 +2,44 @@ import express from "express";
 import Listing from "../models/listing.js";
 import wrapAsync from "../utils/wrapAsync.js";
 import { isLoggedIn, validateListing, isListingOwner } from "../middleware.js";
+import * as listingController from "../controllers/listings.js";
 
 const router = express.Router();
 
-//show all listings
-router.get(
-    "/", 
-    wrapAsync( async(req, res) => {
-    const lists = await Listing.find();
-
-    res.render("listings/index", {lists});
-}));
+router.route("/")
+    .get(wrapAsync( listingController.index))
+    .post(
+        isLoggedIn,
+        validateListing,
+        wrapAsync(listingController.createNewListing)
+    );
 
 //create new listing (render form)
 router.get("/new", 
     isLoggedIn,
-    (req, res) => {
-    res.render("listings/new");
-});
+    listingController.newListingForm);
 
-//add new listing to db
-router.post(
-  "/",
-  isLoggedIn,
-  validateListing,
-  wrapAsync(async (req, res, next) => {
-    const newListing = new Listing(req.body.listing);
-
-    newListing.owner = req.user._id;  // connect Listing to user
-
-    await newListing.save();
-
-    req.flash("success", "listing added successfully!")
-    res.redirect("/listings");
-  })
-);
-
-
-//show listing details
-router.get(
-    "/:id",
-    wrapAsync( async(req, res) => {
-    const {id} = req.params;
-    const listing = await Listing.findById(id)
-        .populate("owner")
-        .populate ({path: "reviews",
-            populate: {path: "author"}
-    });
-
-    if (!listing) {
-        req.flash("error", "listing does not exist!");
-        return res.redirect("/listings");
-    }
-
-    res.render("listings/show", {
-        listing, 
-        formatPrice: (p) => p.toLocaleString("en-IN")});
-}));
+router.route("/:id")
+    .get(wrapAsync(listingController.showListing))
+    .put(
+        isLoggedIn,
+        isListingOwner,
+        validateListing,
+        wrapAsync(listingController.updateListing)
+    )
+    .delete(
+        isLoggedIn,
+        isListingOwner,
+        isListingOwner,
+        wrapAsync(listingController.deleteListing)
+    );
 
 //update listing(render form)
 router.get(
     "/:id/edit", 
     isLoggedIn,
     isListingOwner,
-    wrapAsync( async(req, res) => {
-    const {id} = req.params;
-    const listing = await Listing.findById(id);
-
-    if (!listing) {
-        req.flash("error", "listing you requested for update does not exist!");
-        return res.redirect("/listings");
-    }
-
-    res.render("listings/edit", {listing});
-}));
-
-//update listing
-router.put(
-    "/:id", 
-    isLoggedIn,
-    isListingOwner,
-    validateListing,
-    wrapAsync( async (req, res) => {
-
-    const {id} = req.params;
-    await Listing.findByIdAndUpdate(id, {...req.body.listing});
-
-    req.flash("success", "listing updated successfully!");
-
-    res.redirect(`/listings/${id}`);
-}));
-
-//delete listing
-router.delete(
-    "/:id", 
-    isLoggedIn,
-    isListingOwner,
-    isListingOwner,
-    wrapAsync( async (req, res) => {
-    const {id} = req.params;
-    await Listing.findByIdAndDelete(id);
-
-    req.flash("success", "listing deleted successfully!");
-
-    res.redirect("/listings");
-}));
+    wrapAsync(listingController.updateListingForm)
+    );
 
 export default router;

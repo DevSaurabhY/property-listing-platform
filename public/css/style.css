@@ -131,3 +131,28 @@ body {
   object-fit: cover;   /* 🔑 keeps image proportional */
   display: block;
 }
+
+.star-rating {
+  direction: rtl;
+  display: inline-block;
+  font-size: 1.5rem;
+}
+
+.star-rating label {
+  color: #ccc;
+  cursor: pointer;
+  margin-right: 5px;
+}
+
+.star-rating input {
+  display: none;
+}
+
+.star-rating input:checked ~ label {
+  color: #ffc107;
+}
+
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+  color: #ffc107;
+}
