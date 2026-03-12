@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 import express from "express";
 import mongoose from "mongoose";
 import methodOverride from "method-override";
@@ -81,6 +83,7 @@ app.all(/.*/, (req, res, next) => {
 app.use((err, req, res, next) => {
     let {statusCode = 500, message = "Something went wrong!"} = err;
     // res.status(statusCode).send(message);
+    console.log(err);
     res.status(statusCode).render("listings/error", {message});
 })
 

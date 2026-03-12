@@ -1,4 +1,5 @@
 import Listing from "../models/listing.js";
+import { cloudinary } from "../cloudConfig.js";
 
 export const index = async(req, res) => {
     const lists = await Listing.find();
@@ -13,7 +14,11 @@ export const newListingForm = (req, res) => {
 export const createNewListing = async (req, res, next) => {
     const newListing = new Listing(req.body.listing);
 
+    let url = req.file.path;
+    let filename = req.file.filename;
+
     newListing.owner = req.user._id;  // connect Listing to user
+    newListing.image = {url, filename};
 
     await newListing.save();
 
@@ -54,15 +59,39 @@ export const updateListingForm = async(req, res) => {
 export const updateListing = async (req, res) => {
 
     const {id} = req.params;
-    await Listing.findByIdAndUpdate(id, {...req.body.listing});
+    const listing = await Listing.findById(id);
 
-    req.flash("success", "listing updated successfully!");
+    Object.assign(listing, req.body.listing);
+    
+    if (typeof req.file !== "undefined") {
+        // A. If an OLD image exists on Cloudinary, delete it first
+        if (listing.image && listing.image.filename) {
+            await cloudinary.uploader.destroy(listing.image.filename);
+        }
 
-    res.redirect(`/listings/${id}`);
-}
+        // B. Save the NEW image details to the listing object
+        listing.image = {
+            url: req.file.path,
+            filename: req.file.filename
+        };
+    }
+
+        await listing.save();
+
+        req.flash("success", "listing updated successfully!");
+
+        res.redirect(`/listings/${id}`);
+    }
 
 export const deleteListing = async (req, res) => {
     const {id} = req.params;
+
+    const listing = await Listing.findById(id);
+
+    if (listing.image && listing.image.filename) {
+        await cloudinary.uploader.destroy(listing.image.filename);
+    }
+
     await Listing.findByIdAndDelete(id);
 
     req.flash("success", "listing deleted successfully!");
