@@ -115,7 +115,7 @@ git clone https://github.com/DevSaurabhY/property-listing-platform.git
 
 Navigate into the project:
 
-cd property-listing-platform
+cd MajorProject
 
 Install dependencies:
 
@@ -131,7 +131,6 @@ http://localhost:8080
 
 ## 🔮 Future Improvements
 
-* Image upload with **Cloudinary**
 * Maps integration with **Mapbox**
 * Search functionality
 * Pagination
